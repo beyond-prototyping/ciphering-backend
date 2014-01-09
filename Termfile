@@ -1,0 +1,14 @@
+# emeisdeubel-backend
+
+PROJECT_NAME = "emeisdeubel-backend"
+PORT = 4001
+
+run "cd ~/Sites/emeisdeubel/backend"
+run "source venv/bin/activate"
+run "foreman start -f Procfile.dev -p #{PORT}"
+
+pane do
+  run "cd ~/Sites/emeisdeubel/backend"
+  run "source venv/bin/activate"
+end
+
