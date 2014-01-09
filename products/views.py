@@ -96,8 +96,8 @@ def create_product(request):
     source_file = open(os.path.join(settings.BASE_DIR, 'scad', 'CipheRing.scad'))
     params = json.loads(request.GET.get('param'))
     scad = compile_scad(source_file, params)
-    # stl = convert_scad_to_stl(scad)
-    stl = open(os.path.join(settings.BASE_DIR, 'scad', 'ciphering.stl')).read()
+    stl = convert_scad_to_stl(scad)
+    # stl = open(os.path.join(settings.BASE_DIR, 'scad', 'ciphering.stl')).read()
 
     materials = {}
     for material_id in settings.SHAPEWAYS_MATERIALS:
