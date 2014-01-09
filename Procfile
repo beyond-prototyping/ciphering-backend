@@ -1,1 +1,1 @@
-web:    gunicorn ciphering.wsgi
+web:    gunicorn --timeout 300 ciphering.wsgi
