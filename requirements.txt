@@ -5,6 +5,7 @@ dj-database-url==0.2.2
 django-cors-headers==0.12
 django-werkzeug-debugger-runserver==0.2
 djangorestframework==2.3.10
+gunicorn==18.0
 oauthlib==0.6.0
 psycopg2==2.5.2
 rauth==0.6.2
