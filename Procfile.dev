@@ -1,2 +1,2 @@
 web:    python manage.py runserver 0.0.0.0:$PORT
-worker: rqworker default
+worker: rqworker --url $REDIS_URL default
