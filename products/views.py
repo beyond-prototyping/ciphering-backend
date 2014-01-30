@@ -1,14 +1,17 @@
-from base64 import b64encode
 import json
 import os.path
 import re
+import tempfile
 from django.conf import settings
 from django.shortcuts import render
-from django.http import HttpResponse, HttpResponseRedirect, HttpResponseServerError
+from django.http import HttpResponse, HttpResponseRedirect, HttpResponseServerError, Http404
+from django.utils import six
+import django_rq
 import requests
-from requests_oauthlib import OAuth1, OAuth1Session
 from cStringIO import StringIO
 from urlparse import parse_qs
+from .jobs import compile_scad_to_stl, upload_stl_to_shapeways, send_email
+from .models import Order
 
 
 def authenticate_with_shapeways(request):
@@ -54,7 +57,11 @@ def compile_scad(source_file, params):
     parameters = []
 
     for key in params:
-        parameters.append('{0} = {1};'.format(key, params[key]))
+        if isinstance(params[key], six.string_types):
+            value = '"{0}"'.format(params[key])  # TODO: replace '"' in value
+        else:
+            value = params[key]
+        parameters.append('{0} = {1};'.format(key, value))
 
     scad = source_file.read()
     regex = re.compile(r'// PARAMETERS:START //(.*)// PARAMETERS:END //', re.DOTALL)
@@ -63,41 +70,23 @@ def compile_scad(source_file, params):
     return scad
 
 
-def convert_scad_to_stl(scad):
-    r = requests.post(settings.SCAD2STL_URL, files={'file': ('ciphering.scad', StringIO(scad))})
-    return r.content
-
-
-def upload_stl(stl, materials, default_material, title):
-    oauth = OAuth1(
-        client_key=settings.SHAPEWAYS_CONSUMER_KEY,
-        client_secret=settings.SHAPEWAYS_CONSUMER_SECRET,
-        resource_owner_key=settings.SHAPEWAYS_RESOURCE_OWNER_KEY,
-        resource_owner_secret=settings.SHAPEWAYS_RESOURCE_OWNER_SECRET,
-    )
-
-    data = dict(
-        file=b64encode(stl),
-        fileName='ciphering.stl',
-        hasRightsToModel=1,
-        acceptTermsAndConditions=1,
-        title=title,
-        uploadScale=0.001,
-        defaultMaterialId=default_material,
-        materials=materials,
-        isForSale=1
-    )
-
-    r = requests.post(url='https://api.shapeways.com/models/v1', data=json.dumps(data), auth=oauth)
-    return r.json()
-
-
 def create_product(request):
-    source_file = open(os.path.join(settings.BASE_DIR, 'scad', 'CipheRing.scad'))
     params = json.loads(request.GET.get('param'))
+    order = Order.objects.create(
+        params=params,
+        digits=request.GET.get('digits', ''),
+        material=request.GET.get('material', 0),
+        email=request.GET.get('email', ''),
+    )
+
+    source_file = open(os.path.join(settings.BASE_DIR, 'scad', 'CipheRing.scad'))
+    # source_file = open(os.path.join(settings.BASE_DIR, 'scad', 'test.scad'))
     scad = compile_scad(source_file, params)
-    # stl = convert_scad_to_stl(scad)
-    stl = open(os.path.join(settings.BASE_DIR, 'scad', 'ciphering.stl')).read()
+
+    scad_file = tempfile.mktemp('.scad')
+    f = open(scad_file, 'w')
+    f.write(scad)
+    f.close()
 
     materials = {}
     for material_id in settings.SHAPEWAYS_MATERIALS:
@@ -106,5 +95,42 @@ def create_product(request):
             isActive=1
         )
 
-    model_data = upload_stl(stl=stl, materials=materials, default_material=params['material'], title='CipheRing [{0}]'.format(params['digits']))
-    return HttpResponseRedirect('https://www.shapeways.com/model/{0}/?key={1}'.format(model_data['modelId'], model_data['secretKey']))
+    compile_job = django_rq.enqueue(compile_scad_to_stl, kwargs={
+        'order_id': order.id,
+        'scad_file': scad_file,
+    })
+
+    upload_job = django_rq.enqueue(upload_stl_to_shapeways, kwargs={
+        'compile_job_id': compile_job.id,
+        'order_id': order.id,
+        'materials': materials,
+        'default_material': request.GET.get('material', 0),
+        'title': 'CipheRing [{0}]'.format(request.GET.get('digits')),
+    }, depends_on=compile_job)
+
+    email_job = django_rq.enqueue(send_email, kwargs={
+        'upload_job_id': upload_job.id,
+        'order_id': order.id,
+        'email': request.GET.get('email') or settings.ADMINS[0][1],
+    }, depends_on=upload_job)
+
+    order.compile_job_id = compile_job.id
+    order.upload_job_id = upload_job.id
+    order.email_job_id = email_job.id
+    order.save()
+
+    return HttpResponseRedirect('{0}/#/order/{1}'.format(settings.FRONTEND_BASE_URL, order.uuid))
+
+
+def order_status(request, order_uuid):
+    queue = django_rq.get_queue()
+    try:
+        order = Order.objects.get(uuid=order_uuid)
+    except Order.DoesNotExist:
+        return HttpResponse('{"status": "not-found"}', content_type='application/json')
+
+    return HttpResponse(json.dumps(dict(
+        status=order.status,
+        description=order.get_status_display(),
+        shapeways_url=order.shapeways_url,
+    )), content_type='application/json')

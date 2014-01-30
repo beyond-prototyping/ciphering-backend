@@ -47,12 +47,12 @@ rotate([180,0,0]) difference() {
 			translate([eyeDistance,-ringRadius,0])
 			rotate([0,((yPixels+1)/2)*deltaY,180])
 			translate([-eyeDistance/2,-ringRadius*2.5,-ringRadius])
-		 	cube(size=[eyeDistance*2,ringRadius*3,ringRadius],center=false);
+			cube(size=[eyeDistance*2,ringRadius*3,ringRadius],center=false);
 
 			translate([eyeDistance,ringRadius,0])
 			rotate([0,((yPixels+1)/2)*deltaY,0])
 			translate([-eyeDistance*2,-ringRadius*2.5,0])
-		 	cube(size=[eyeDistance*2,ringRadius*3,ringRadius],center=false);
+			cube(size=[eyeDistance*2,ringRadius*3,ringRadius],center=false);
 
 	}
 
@@ -69,7 +69,6 @@ rotate([180,0,0]) difference() {
 					translate([-round(rands(0,1,1)[0])*eyeDistance,0,0])
 					cube(size=[eyeDistance,pixelWidth*1.08,pixelHeight/2],center=true);
 				}
-
 			}
 		}
 	}

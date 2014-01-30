@@ -32,6 +32,10 @@ TEMPLATE_DEBUG = DEBUG
 
 ALLOWED_HOSTS = ['*']
 
+ADMINS = (
+    ('Philipp Bosch', 'hello+ciphering@pb.io'),
+)
+
 
 # Application definition
 
@@ -46,6 +50,7 @@ INSTALLED_APPS = (
     'rest_framework',
     'werkzeug_debugger_runserver',
     'corsheaders',
+    'django_rq',
     'products',
 )
 
@@ -120,6 +125,11 @@ REST_FRAMEWORK = {
     # ]
 }
 
+EMAIL_HOST = 'smtp.sendgrid.net'
+EMAIL_HOST_USER = os.getenv('SENDGRID_USERNAME')
+EMAIL_HOST_PASSWORD = os.getenv('SENDGRID_PASSWORD')
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
 
 SHAPEWAYS_CONSUMER_KEY = env.get('SHAPEWAYS_CONSUMER_KEY')
 SHAPEWAYS_CONSUMER_SECRET = env.get('SHAPEWAYS_CONSUMER_SECRET')
@@ -133,3 +143,14 @@ SCAD2STL_URL = 'http://scad2stl.pbsit.es/'
 
 
 CORS_ORIGIN_ALLOW_ALL = True
+
+
+RQ_QUEUES = {
+    'default': {
+        'URL': os.getenv('REDIS_URL', 'redis://localhost:6379'),
+        'DB': 0,
+    },
+}
+
+OPENSCAD_BINARY = os.getenv('OPENSCAD_BINARY', '/opt/homebrew-cask/Caskroom/openscad/2013.06/OpenSCAD.app/Contents/MacOS/OpenSCAD')
+FRONTEND_BASE_URL = os.getenv('FRONTEND_BASE_URL', 'http://localhost:4000')

@@ -43,12 +43,14 @@ admin.autodiscover()
 
 urlpatterns = patterns('',
     url(r'^admin/', include(admin.site.urls)),
+    url(r'^django-rq/', include('django_rq.urls')),
     url(r'^', include(router.urls)),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     # url(r'^authenticate/$', authenticate_with_shapeways),
     url(r'^materials/$', ListMaterials.as_view()),
     url(r'^ringsizes/$', ListRingsizes.as_view()),
     url(r'^products/create/$', 'products.views.create_product'),
+    url(r'^products/order-status/(?P<order_uuid>[^/]+)/$', 'products.views.order_status'),
     # url(r'^compile-scad/$', compile_scad),
     # url(r'^upload/$', upload_stl),
 )
