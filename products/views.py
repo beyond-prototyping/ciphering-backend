@@ -66,6 +66,8 @@ def compile_scad(source_file, params):
     scad = source_file.read()
     regex = re.compile(r'// PARAMETERS:START //(.*)// PARAMETERS:END //', re.DOTALL)
     scad = re.sub(regex, "\n".join(parameters), scad)
+    scad = re.sub('use <([^>]+)>', lambda m: open(os.path.join(settings.BASE_DIR, 'scad', m.group(1))).read(), scad)
+    scad = re.sub('font = "([^"]+)"', lambda m: 'font = "{0}"'.format(os.path.join(settings.BASE_DIR, 'scad', m.group(1))), scad)
 
     return scad
 
@@ -105,7 +107,7 @@ def create_product(request):
         'order_id': order.id,
         'materials': materials,
         'default_material': request.GET.get('material', 0),
-        'title': 'CipheRing [{0}]'.format(request.GET.get('digits')),
+        'title': 'CipheRing [{0} {1} {2}]'.format(request.GET.get('digits'), params['initials1'], params['initials2']),
     }, depends_on=compile_job)
 
     email_job = django_rq.enqueue(send_email, kwargs={
