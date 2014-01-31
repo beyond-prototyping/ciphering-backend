@@ -52,6 +52,7 @@ def compile_scad_to_stl(order_id, scad_file):
         order.save()
         return stl_file
     else:
+        print settings.OPENSCAD_BINARY, scad_file, stl_file, r.std_out, r.std_err
         order.status = Order.STATUS_FAILED
         order.save()
         raise Exception("Conversion failed with error {0}".format(r.status_code))
