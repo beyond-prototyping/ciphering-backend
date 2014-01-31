@@ -32,6 +32,9 @@ ringResolution=80;
 deltaX=atan(pixelWidth/eyeDistance); //how many degrees per pixel angle from the viewing point.
 deltaY=atan(pixelHeight/eyeDistance); //how many degrees per pixel angle from the viewing point.
 
+// Pre-generate some random values
+random_values = rands(0, 1, len(pattern) * len(pattern[0]));
+
 rotate([180,0,0]) difference() {
         difference() {
 //          cylinder(h=pixelHeight*(yPixels+6), r=ringRadius+ringWall, $fn= ringResolution, center =true);
@@ -72,7 +75,7 @@ rotate([180,0,0]) difference() {
                 }else if ((j==0 && (i == 7  || i == 13  ))||(j==4 && (i == 3 || i == 9  ))){
                     echo("support pixel");
                 }else{
-                    translate([-round(rands(0,1,1)[0])*ringRadius*2+ringRadius-eyeDistance/2,0,0])
+                    translate([-round(random_values[i*j])*ringRadius*2+ringRadius-eyeDistance/2,0,0])
                     cube(size=[ringRadius*2,pixelWidth*1.08,pixelHeight/2],center=true);
                     echo ("random Pixel");
                 }
