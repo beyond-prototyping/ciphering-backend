@@ -19,7 +19,8 @@ ringRadius = 8.28;
 // Eye distance (in mm, fixed)
 eyeDistance = 150;
 
-
+// Pre-generate some random values
+random_values = rands(0, 1, len(pattern) * len(pattern[0]));
 
 
 
@@ -65,8 +66,8 @@ rotate([180,0,0]) difference() {
 				{
 					translate([-eyeDistance/2,0,0])
 					cube(size=[eyeDistance,pixelWidth*1.08,pixelHeight/2],center=true);
-				}else{
-					translate([-round(rands(0,1,1)[0])*eyeDistance,0,0])
+				} else {
+					translate([-round(random_values[i*j])*eyeDistance,0,0])
 					cube(size=[eyeDistance,pixelWidth*1.08,pixelHeight/2],center=true);
 				}
 			}
