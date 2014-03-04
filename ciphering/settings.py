@@ -143,6 +143,15 @@ SCAD2STL_URL = 'http://scad2stl.pbsit.es/'
 
 
 CORS_ORIGIN_ALLOW_ALL = True
+CORS_ALLOW_HEADERS = (
+    'x-requested-with',
+    'content-type',
+    'accept',
+    'accept-encoding',
+    'origin',
+    'authorization',
+    'x-csrftoken'
+)
 
 
 RQ_QUEUES = {
