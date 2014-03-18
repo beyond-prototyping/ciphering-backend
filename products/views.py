@@ -1,15 +1,18 @@
 import json
 import os.path
 import re
+from cStringIO import StringIO
 import tempfile
+from urlparse import parse_qs
+
 from django.conf import settings
 from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseServerError, Http404
 from django.utils import six
 import django_rq
 import requests
-from cStringIO import StringIO
-from urlparse import parse_qs
+from requests_oauthlib import OAuth1, OAuth1Session
+
 from .jobs import compile_scad_to_stl, upload_stl_to_shapeways, send_email
 from .models import Order
 
@@ -29,10 +32,10 @@ def authenticate_with_shapeways(request):
             credentials = parse_qs(r.content)
             request.session['credentials'] = credentials
             return_url = request.session.get('return_url')
-            print credentials
             if return_url is not None:
                 return HttpResponseRedirect(return_url)
             else:
+                print request.session['credentials']
                 return HttpResponse('Authenticated successfully.')
         else:
             try:

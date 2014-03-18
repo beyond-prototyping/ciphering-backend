@@ -11,6 +11,7 @@ from requests_oauthlib import OAuth1, OAuth1Session
 from rest_framework import viewsets, routers
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from products.views import authenticate_with_shapeways
 
 
 router = routers.DefaultRouter()
