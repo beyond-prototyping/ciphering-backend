@@ -107,7 +107,7 @@ def create_product(request):
         'order_id': order.id,
         'materials': materials,
         'default_material': request.GET.get('material', 0),
-        'title': 'CipheRing [{0} {1} {2}]'.format(request.GET.get('digits'), params['initials1'], params['initials2']),
+        'title': 'CipheRing[{0}{1}{2}]'.format(request.GET.get('digits'), params['initials1'], params['initials2']),
     }, depends_on=compile_job)
 
     email_job = django_rq.enqueue(send_email, kwargs={
