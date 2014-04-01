@@ -35,7 +35,7 @@ def authenticate_with_shapeways(request):
             if return_url is not None:
                 return HttpResponseRedirect(return_url)
             else:
-                print request.session['credentials']
+                # print request.session['credentials']
                 return HttpResponse('Authenticated successfully.')
         else:
             try:
@@ -97,7 +97,8 @@ def create_product(request):
     for material_id in settings.SHAPEWAYS_MATERIALS:
         materials[material_id] = dict(
             materialId=material_id,
-            isActive=1
+            isActive=1,
+            markup=5.00,
         )
 
     compile_job = django_rq.enqueue(compile_scad_to_stl, kwargs={
