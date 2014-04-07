@@ -152,6 +152,7 @@ CORS_ALLOW_HEADERS = (
     'authorization',
     'x-csrftoken',
     'cache-control',
+    'dnt',
 )
 
 
