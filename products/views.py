@@ -98,7 +98,7 @@ def create_product(request):
         materials[material_id] = dict(
             materialId=material_id,
             isActive=1,
-            markup=5.00,
+            markup=float(settings.SHAPEWAYS_MARKUP),
         )
 
     compile_job = django_rq.enqueue(compile_scad_to_stl, kwargs={
