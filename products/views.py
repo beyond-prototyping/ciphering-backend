@@ -1,4 +1,5 @@
 import json
+import math
 import os.path
 import re
 from cStringIO import StringIO
@@ -9,12 +10,14 @@ from django.conf import settings
 from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseServerError, Http404
 from django.utils import six
+from django.views.decorators.csrf import csrf_exempt
 import django_rq
 import requests
 from requests_oauthlib import OAuth1, OAuth1Session
 
 from .jobs import compile_scad_to_stl, upload_stl_to_shapeways, send_email
 from .models import Order
+from .utils import create_pattern
 
 
 def authenticate_with_shapeways(request):
@@ -35,7 +38,6 @@ def authenticate_with_shapeways(request):
             if return_url is not None:
                 return HttpResponseRedirect(return_url)
             else:
-                # print request.session['credentials']
                 return HttpResponse('Authenticated successfully.')
         else:
             try:
@@ -75,17 +77,23 @@ def compile_scad(source_file, params):
     return scad
 
 
+@csrf_exempt
 def create_product(request):
-    params = json.loads(request.GET.get('param'))
+    params = {
+        'ringRadius': float(request.POST.get('ringsize'))/(math.pi*2),
+        'initials1': request.POST.get('initials1'),
+        'initials2': request.POST.get('initials2'),
+        'pattern': create_pattern(request.POST.get('digits'))
+    }
+
     order = Order.objects.create(
         params=params,
-        digits=request.GET.get('digits', ''),
-        material=request.GET.get('material', 0),
-        email=request.GET.get('email', ''),
+        digits=request.POST.get('digits', ''),
+        material=request.POST.get('material', 0),
+        email=request.POST.get('email', ''),
     )
 
     source_file = open(os.path.join(settings.BASE_DIR, 'scad', 'CipheRing.scad'))
-    # source_file = open(os.path.join(settings.BASE_DIR, 'scad', 'test.scad'))
     scad = compile_scad(source_file, params)
 
     scad_file = tempfile.mktemp('.scad')
@@ -110,14 +118,14 @@ def create_product(request):
         'compile_job_id': compile_job.id,
         'order_id': order.id,
         'materials': materials,
-        'default_material': request.GET.get('material', 0),
-        'title': 'CipheRing[{0}{1}{2}]'.format(request.GET.get('digits'), params['initials1'], params['initials2']),
+        'default_material': order.material,
+        'title': 'CipheRing[{0}{1}{2}]'.format(request.POST.get('digits'), params['initials1'], params['initials2']),
     }, depends_on=compile_job)
 
     email_job = django_rq.enqueue(send_email, kwargs={
         'upload_job_id': upload_job.id,
         'order_id': order.id,
-        'email': request.GET.get('email') or settings.ADMINS[0][1],
+        'email': request.POST.get('email') or settings.ADMINS[0][1],
     }, depends_on=upload_job)
 
     order.compile_job_id = compile_job.id
@@ -125,7 +133,7 @@ def create_product(request):
     order.email_job_id = email_job.id
     order.save()
 
-    return HttpResponseRedirect('{0}/#/order/{1}'.format(settings.FRONTEND_BASE_URL, order.uuid))
+    return HttpResponseRedirect('{0}/order/?id={1}'.format(settings.FRONTEND_BASE_URL, order.uuid))
 
 
 def order_status(request, order_uuid):

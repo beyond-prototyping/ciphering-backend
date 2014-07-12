@@ -165,4 +165,4 @@ RQ_QUEUES = {
 }
 
 OPENSCAD_BINARY = os.getenv('OPENSCAD_BINARY', '/opt/homebrew-cask/Caskroom/openscad/2013.06/OpenSCAD.app/Contents/MacOS/OpenSCAD')
-FRONTEND_BASE_URL = os.getenv('FRONTEND_BASE_URL', 'http://localhost:4000')
+FRONTEND_BASE_URL = os.getenv('FRONTEND_BASE_URL', 'http://localhost:4567')
