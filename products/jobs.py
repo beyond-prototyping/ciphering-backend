@@ -101,7 +101,7 @@ def send_email(upload_job_id, order_id, email):
     job = fetch_job(upload_job_id)
     order = fetch_order(order_id)
 
-    r = send_mail('Your CipheRing is now ready to order!', 'Woohoo! Your CipheRing is now ready to order at this URL: {0}'.format('{0}/order?id={1}&from=email'.format(settings.FRONTEND_BASE_URL, order.uuid)), 'CipheRing <admin+ciphering@pb.io>', [email], fail_silently=False)
+    r = send_mail('Your CipheRing is now ready to order!', 'Woohoo! Your CipheRing is now ready to order at this URL: {0}'.format('{0}/order/?id={1}&from=email'.format(settings.FRONTEND_BASE_URL, order.uuid)), 'CipheRing <admin+ciphering@pb.io>', [email], fail_silently=False)
 
     order.status = Order.STATUS_NOTIFIED
     order.save()
