@@ -20,11 +20,11 @@ ringRadius = 8.28;
 // PARAMETERS:END //
 
 // Eye distance (in mm, fixed)
-eyeDistance = 150;
+eyeDistance = 250;
 
 pixelWidth = ringRadius/9;
 pixelHeight = ringRadius/7.1429;
-ringWall = 1;
+ringWall = 1.2;
 
 xPixels = len(pattern[0]);
 yPixels = len(pattern);
@@ -35,22 +35,16 @@ deltaY=atan(pixelHeight/eyeDistance); //how many degrees per pixel angle from th
 // Pre-generate some random values
 random_values = rands(0, 1, len(pattern) * len(pattern[0]));
 
-rotate([180,0,0]) difference() {
+rotate([180,0,0]) difference() { 
+    minkowski(){ //take a quarter of the wall width for the rounding of the corners of the outer shape.
+
         difference() {
-//          cylinder(h=pixelHeight*(yPixels+6), r=ringRadius+ringWall, $fn= ringResolution, center =true);
-            scale([1,1,2.1]){sphere(r=ringRadius+ringWall, $fn= ringResolution+30 );}
+            scale([1,1,2.1]){sphere(r=ringRadius+ringWall*3/4, $fn= ringResolution+30 );}
 
             translate([0,0,-1])
-            cylinder(h=pixelHeight*7+2, r=ringRadius, $fn= ringResolution, center =true);
-            //punch the inside text:
-//          rotate([90,0,0])
-//          cylinder(h=ringRadius*2+.4, r=2, $fn= 3, center =true);
-            rotate([0,180,0]){
- writecylinder(initials1,[0,0,0],-ringRadius,0,rotate=0, h=3*pixelHeight, t=.4);
- writecylinder(initials2,[0,0,0],-ringRadius,0,rotate=0, h=3*pixelHeight, t=.4, east=180);
-}
+            cylinder(h=pixelHeight*7+2, r=ringRadius+ringWall/4, $fn= ringResolution, center =true);
 
-        //slice the top and bottom along the radial angle of the sweetspot
+            //slice the top and bottom along the radial angle of the sweetspot
             translate([eyeDistance,-ringRadius,0])
             rotate([0,((yPixels+1)/2)*deltaY,180])
             translate([-eyeDistance/2,-ringRadius*2.5,-ringRadius*2])
@@ -60,7 +54,16 @@ rotate([180,0,0]) difference() {
             rotate([0,((yPixels+1)/2)*deltaY,0])
             translate([-eyeDistance*2,-ringRadius*2.5,0])
             cube(size=[eyeDistance*2,ringRadius*3,ringRadius*2],center=false);
+        }
+    sphere(ringWall/4,$fn=5); //the sphere that "expands the rounded edge"
+    } // the minkowski sum rounding.
+
+    //punch the inside text:
+    rotate([0,180,0]){
+        writecylinder(initials1,[0,0,0],-ringRadius,0,rotate=0, h=3*pixelHeight, t=.4);
+        writecylinder(initials2,[0,0,0],-ringRadius,0,rotate=0, h=3*pixelHeight, t=.4, east=180);
     }
+
 
     translate([eyeDistance,0,0]) {
         for(i=[0:xPixels-1]){
