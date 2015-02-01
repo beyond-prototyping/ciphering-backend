@@ -2,15 +2,13 @@
 from base64 import b64encode
 import json
 import os
-import pickle
 import tempfile
 import django_rq
 import envoy
-import redis
 import requests
 from django.conf import settings
 from django.core.mail import send_mail
-from requests_oauthlib import OAuth1, OAuth1Session
+from requests_oauthlib import OAuth1
 from .models import Order
 
 
@@ -89,9 +87,9 @@ def upload_stl_to_shapeways(compile_job_id, order_id, materials, default_materia
     os.unlink(stl_file)
 
     model_data = r.json()
-    shapeways_url = 'https://www.shapeways.com/model/{0}/?key={1}'.format(model_data['modelId'], model_data['secretKey'])
+
     order.status = Order.STATUS_UPLOADED
-    order.shapeways_url = shapeways_url
+    order.shapeways_url = model_data['urls']['publicProductUrl']['address']
     order.save()
 
     return model_data
