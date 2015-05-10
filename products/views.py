@@ -2,18 +2,16 @@ import json
 import math
 import os.path
 import re
-from cStringIO import StringIO
 import tempfile
 from urlparse import parse_qs
 
 from django.conf import settings
-from django.shortcuts import render
-from django.http import HttpResponse, HttpResponseRedirect, HttpResponseServerError, Http404
+from django.http import HttpResponse, HttpResponseRedirect, HttpResponseServerError
 from django.utils import six
 from django.views.decorators.csrf import csrf_exempt
 import django_rq
 import requests
-from requests_oauthlib import OAuth1, OAuth1Session
+from requests_oauthlib import OAuth1
 
 from .jobs import compile_scad_to_stl, upload_stl_to_shapeways, send_email
 from .models import Order
@@ -21,7 +19,7 @@ from .utils import create_pattern
 
 
 def authenticate_with_shapeways(request):
-    if request.GET.has_key('oauth_token') and request.GET.has_key('oauth_verifier'):
+    if 'oauth_token' in request.GET and 'oauth_verifier' in request.GET:
         access_token_url = 'https://api.shapeways.com/oauth1/access_token/v1'
         oauth = OAuth1(
             client_key=settings.SHAPEWAYS_CONSUMER_KEY,
@@ -80,7 +78,7 @@ def compile_scad(source_file, params):
 @csrf_exempt
 def create_product(request):
     params = {
-        'ringRadius': float(request.POST.get('ringsize'))/(math.pi*2),
+        'ringRadius': float(request.POST.get('ringsize')) / (math.pi * 2),
         'initials1': request.POST.get('initials1'),
         'initials2': request.POST.get('initials2'),
         'pattern': create_pattern(request.POST.get('digits'))
@@ -137,7 +135,6 @@ def create_product(request):
 
 
 def order_status(request, order_uuid):
-    queue = django_rq.get_queue()
     try:
         order = Order.objects.get(uuid=order_uuid)
     except Order.DoesNotExist:
