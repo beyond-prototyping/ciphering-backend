@@ -1,3 +1,7 @@
+import boto
+from django.conf import settings
+
+
 PIXELDIGITS = {
     '0': [
         [1,1,1],
@@ -85,13 +89,19 @@ def create_pattern(digits):
     for i, digit in enumerate(digits):
         for j, row in enumerate(PIXELDIGITS[digit]):
             pattern[j] += row
-            if i < 4: # 1px spacing between digits except for the last digit
+            if i < 4:  # 1px spacing between digits except for the last digit
                 pattern[j].append(0)
 
     # fill up the rows with zeros
     for i in range(len(pattern)):
         if len(pattern[i]) < 17:
-            filler = [0 for n in range(1, 18-len(pattern[i]))]
+            filler = [0 for n in range(1, 18 - len(pattern[i]))]
             pattern[i] += filler
 
     return pattern
+
+
+def s3bucket():
+    s3 = boto.connect_s3()
+    bucket = s3.get_bucket(settings.STORAGE_BUCKET)
+    return bucket

@@ -4,7 +4,6 @@ import json
 import os
 import tempfile
 
-import boto
 import django_rq
 import envoy
 import requests
@@ -12,6 +11,7 @@ from django.conf import settings
 from django.core.mail import send_mail
 from requests_oauthlib import OAuth1
 from .models import Order
+from .utils import s3bucket
 
 
 def fetch_job(job_id):
@@ -28,11 +28,17 @@ def fetch_order(order_id):
     return order
 
 
-def compile_scad_to_stl(order_id, scad_file):
+def compile_scad_to_stl(order_id):
     order = fetch_order(order_id)
 
     order.status = Order.STATUS_COMPILING
     order.save()
+    bucket = s3bucket()
+    key = bucket.get_key('scad:{0}'.format(order.uuid))
+
+    scad_file = tempfile.mktemp('.scad')
+    with open(scad_file, 'w') as f:
+        f.write(key.get_contents_as_string())
 
     stl_file = tempfile.mktemp('.stl')
 
@@ -48,9 +54,8 @@ def compile_scad_to_stl(order_id, scad_file):
         os.unlink(scad_file)
 
     if r.status_code == 0:
-        s3 = boto.connect_s3()
-        bucket = s3.get_bucket(settings.STORAGE_BUCKET)
-        key = bucket.new_key('stl:{0}'.format(order_id))
+        bucket = s3bucket()
+        key = bucket.new_key('stl:{0}'.format(order.uuid))
         key.set_contents_from_filename(stl_file)
 
         order.status = Order.STATUS_COMPILED
@@ -67,8 +72,7 @@ def upload_stl_to_shapeways(compile_job_id, order_id, materials, default_materia
     job = fetch_job(compile_job_id)
     order = fetch_order(order_id)
 
-    s3 = boto.connect_s3()
-    bucket = s3.get_bucket(settings.STORAGE_BUCKET)
+    bucket = s3bucket()
     key = bucket.get_key(job.result)
     stl = key.get_contents_as_string()
 

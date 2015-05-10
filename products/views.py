@@ -2,7 +2,6 @@ import json
 import math
 import os.path
 import re
-import tempfile
 from urlparse import parse_qs
 
 from django.conf import settings
@@ -15,7 +14,7 @@ from requests_oauthlib import OAuth1
 
 from .jobs import compile_scad_to_stl, upload_stl_to_shapeways, send_email
 from .models import Order
-from .utils import create_pattern
+from .utils import create_pattern, s3bucket
 
 
 def authenticate_with_shapeways(request):
@@ -94,10 +93,9 @@ def create_product(request):
     source_file = open(os.path.join(settings.BASE_DIR, 'scad', 'CipheRing.scad'))
     scad = compile_scad(source_file, params)
 
-    scad_file = tempfile.mktemp('.scad')
-    f = open(scad_file, 'w')
-    f.write(scad)
-    f.close()
+    bucket = s3bucket()
+    key = bucket.new_key('scad:{0}'.format(order.uuid))
+    key.set_contents_from_string(scad)
 
     materials = {}
     for material_id in settings.SHAPEWAYS_MATERIALS:
@@ -109,7 +107,6 @@ def create_product(request):
 
     compile_job = django_rq.enqueue(compile_scad_to_stl, kwargs={
         'order_id': order.id,
-        'scad_file': scad_file,
     })
 
     upload_job = django_rq.enqueue(upload_stl_to_shapeways, kwargs={
