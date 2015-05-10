@@ -111,7 +111,6 @@ MEDIA_URL = env.get('MEDIA_URL', '/media/')
 MEDIA_ROOT = env.get('MEDIA_ROOT')
 
 
-
 REST_FRAMEWORK = {
     # Use hyperlinked styles by default.
     # Only used if the `serializer_class` attribute is not set on a view.
@@ -137,7 +136,7 @@ SHAPEWAYS_GENERIC_OAUTH_TOKEN = env.get('SHAPEWAYS_GENERIC_OAUTH_TOKEN')
 SHAPEWAYS_GENERIC_OAUTH_TOKEN_SECRET = env.get('SHAPEWAYS_GENERIC_OAUTH_TOKEN_SECRET')
 SHAPEWAYS_RESOURCE_OWNER_KEY = env.get('SHAPEWAYS_RESOURCE_OWNER_KEY')
 SHAPEWAYS_RESOURCE_OWNER_SECRET = env.get('SHAPEWAYS_RESOURCE_OWNER_SECRET')
-SHAPEWAYS_MATERIALS = [54,81,87,91,96,97,98,99]
+SHAPEWAYS_MATERIALS = [54, 81, 87, 91, 96, 97, 98, 99]
 SHAPEWAYS_MARKUP = os.getenv('SHAPEWAYS_MARKUP', 0)
 
 SCAD2STL_URL = 'http://scad2stl.pbsit.es/'
@@ -159,7 +158,7 @@ CORS_ALLOW_HEADERS = (
 
 RQ_QUEUES = {
     'default': {
-        'URL': os.getenv('REDIS_URL', 'redis://localhost:6379'),
+        'URL': os.getenv('REDIS_URL', os.getenv('REDISTOGO_URL', 'redis://localhost:6379')),
         'DB': 0,
     },
 }
