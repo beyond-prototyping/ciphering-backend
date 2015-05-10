@@ -165,3 +165,4 @@ RQ_QUEUES = {
 
 OPENSCAD_BINARY = os.getenv('OPENSCAD_BINARY', '/Users/pb/Applications/OpenSCAD.app/Contents/MacOS/OpenSCAD')
 FRONTEND_BASE_URL = os.getenv('FRONTEND_BASE_URL', 'http://localhost:4567')
+STORAGE_BUCKET='ciphering-storage'

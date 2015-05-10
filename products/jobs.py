@@ -3,6 +3,8 @@ from base64 import b64encode
 import json
 import os
 import tempfile
+
+import boto
 import django_rq
 import envoy
 import requests
@@ -46,9 +48,14 @@ def compile_scad_to_stl(order_id, scad_file):
         os.unlink(scad_file)
 
     if r.status_code == 0:
+        s3 = boto.connect_s3()
+        bucket = s3.get_bucket(settings.STORAGE_BUCKET)
+        key = bucket.new_key('stl:{0}'.format(order_id))
+        key.set_contents_from_filename(stl_file)
+
         order.status = Order.STATUS_COMPILED
         order.save()
-        return stl_file
+        return key.key
     else:
         print settings.OPENSCAD_BINARY, scad_file, stl_file, r.std_out, r.std_err
         order.status = Order.STATUS_FAILED
@@ -60,8 +67,10 @@ def upload_stl_to_shapeways(compile_job_id, order_id, materials, default_materia
     job = fetch_job(compile_job_id)
     order = fetch_order(order_id)
 
-    stl_file = job.result
-    stl = open(stl_file).read()
+    s3 = boto.connect_s3()
+    bucket = s3.get_bucket(settings.STORAGE_BUCKET)
+    key = bucket.get_key(job.result)
+    stl = key.get_contents_as_string()
 
     oauth = OAuth1(
         client_key=settings.SHAPEWAYS_CONSUMER_KEY,
@@ -83,8 +92,6 @@ def upload_stl_to_shapeways(compile_job_id, order_id, materials, default_materia
     )
 
     r = requests.post(url='https://api.shapeways.com/models/v1', data=json.dumps(data), auth=oauth)
-
-    os.unlink(stl_file)
 
     model_data = r.json()
 
